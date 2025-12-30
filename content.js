@@ -1,5 +1,7 @@
 // content.js - Runs on job sites to detect application confirmations
 
+let checkInterval = null; // Global variable to track the interval for clearing it later
+
 function isApplicationConfirmation() {
   const url = window.location.href;
   const text = document.body.innerText.toLowerCase();
@@ -31,8 +33,17 @@ function extractJobInfo() {
   // Clean title (e.g., "Software Engineer at Google | LinkedIn")
   if (title.includes(' at ')) {
     const parts = title.split(' at ');
-    const role = parts[0].replace(' | LinkedIn', '').replace(' - Greenhouse', '').trim();
-    const company = parts[1].split(' | ')[0].split(' - ')[0].trim();
+    // More comprehensive cleanup for various job sites
+    const role = parts[0]
+      .replace(/ \| .+$/, '')  // Remove " | SiteName" 
+      .replace(/ -.+$/, '')    // Remove " - SiteName"
+      .replace(/\[.+\]/, '')   // Remove "[SiteName]"
+      .trim();
+    const company = parts[1]
+      .split(' | ')[0]         // Take part before " | "
+      .split(' - ')[0]         // Take part before " - "
+      .split(' [')[0]          // Take part before " ["
+      .trim();
     return { role, company };
   }
 
@@ -85,7 +96,13 @@ function injectTrackButton() {
   };
 
   button.onclick = () => {
+    // Clear the interval when the button is clicked to prevent duplicate buttons
+    if (checkInterval) {
+      clearInterval(checkInterval);
+    }
+    
     const jobData = {
+      id: Date.now() + Math.random(), // Add unique ID
       role,
       company,
       url: window.location.href,
@@ -94,6 +111,14 @@ function injectTrackButton() {
 
     // Save to chrome storage
     chrome.storage.local.get(['jobs'], (data) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error getting jobs:', chrome.runtime.lastError);
+        button.innerText = '❌ Error';
+        button.style.background = '#dc3545';
+        setTimeout(() => button.remove(), 2000);
+        return;
+      }
+      
       const jobs = data.jobs || [];
 
       // Check for duplicates
@@ -107,9 +132,16 @@ function injectTrackButton() {
 
       jobs.push(jobData);
       chrome.storage.local.set({ jobs }, () => {
-        button.innerText = '✅ Saved!';
-        button.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
-        setTimeout(() => button.remove(), 2000);
+        if (chrome.runtime.lastError) {
+          console.error('Error saving job:', chrome.runtime.lastError);
+          button.innerText = '❌ Error';
+          button.style.background = '#dc3545';
+          setTimeout(() => button.remove(), 2000);
+        } else {
+          button.innerText = '✅ Saved!';
+          button.style.background = 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)';
+          setTimeout(() => button.remove(), 2000);
+        }
       });
     });
   };
@@ -121,7 +153,7 @@ function injectTrackButton() {
 let checkCount = 0;
 const maxChecks = 30; // Stop after 1 minute
 
-const checkInterval = setInterval(() => {
+checkInterval = setInterval(() => {
   checkCount++;
 
   if (isApplicationConfirmation()) {

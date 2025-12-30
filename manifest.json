@@ -3,7 +3,7 @@
   "name": "JobTrack – Follow-Up Assistant",
   "version": "1.0",
   "description": "Track job applications and generate AI follow-ups.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "tabs"],
   "content_scripts": [
     {
       "matches": [
