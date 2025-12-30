@@ -24,38 +24,72 @@ function loadJobs() {
     const draftBtn = document.getElementById('draft-btn');
 
     chrome.storage.local.get(['jobs'], (data) => {
-        const jobs = data.jobs || [];
+        if (chrome.runtime.lastError) {
+            console.error('Error loading jobs:', chrome.runtime.lastError);
+            showStatus('Error loading applications', 'error');
+            return;
+        }
+        
+        let jobs = data.jobs || [];
+        
+        // Assign IDs to existing jobs if they don't have them (for backward compatibility)
+        jobs = jobs.map(job => {
+            if (!job.id) {
+                job.id = Date.now() + Math.random(); // Generate a unique ID
+            }
+            return job;
+        });
+        
+        // Update storage with the new IDs if needed
+        const jobsNeedIdUpdate = data.jobs && data.jobs.some(job => !job.id);
+        if (jobsNeedIdUpdate) {
+            chrome.storage.local.set({ jobs }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('Error updating job IDs:', chrome.runtime.lastError);
+                    showStatus('Error updating applications', 'error');
+                } else {
+                    // Continue with the rest of the function after updating IDs
+                    updateJobDisplay(jobs, jobsDiv, totalCount, pendingCount, draftBtn);
+                }
+            });
+        } else {
+            updateJobDisplay(jobs, jobsDiv, totalCount, pendingCount, draftBtn);
+        }
+    });
+}
 
-        // Update stats
-        totalCount.textContent = jobs.length;
-        const needFollowUp = jobs.filter(job => getDaysSince(job.date) >= 7).length;
-        pendingCount.textContent = needFollowUp;
+// Separate function to handle the job display logic
+function updateJobDisplay(jobs, jobsDiv, totalCount, pendingCount, draftBtn) {
+    // Update stats
+    totalCount.textContent = jobs.length;
+    const needFollowUp = jobs.filter(job => getDaysSince(job.date) >= 7).length;
+    pendingCount.textContent = needFollowUp;
 
-        if (jobs.length === 0) {
-            jobsDiv.innerHTML = `
+    if (jobs.length === 0) {
+        jobsDiv.innerHTML = `
         <div class="empty-state">
           <div class="icon">📋</div>
           <p>No jobs tracked yet.<br>Apply on LinkedIn, Indeed, or other job sites to get started!</p>
         </div>
       `;
-            draftBtn.disabled = true;
-            return;
-        }
+        draftBtn.disabled = true;
+        return;
+    }
 
-        draftBtn.disabled = false;
+    draftBtn.disabled = false;
 
-        // Sort by date (newest first for display, but oldest first for follow-up)
-        const sortedJobs = [...jobs].sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort by date (newest first for display, but oldest first for follow-up)
+    const sortedJobs = [...jobs].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        jobsDiv.innerHTML = '';
-        sortedJobs.forEach((job, index) => {
-            const days = getDaysSince(job.date);
-            const isUrgent = days >= 7;
+    jobsDiv.innerHTML = '';
+    sortedJobs.forEach((job, index) => {
+        const days = getDaysSince(job.date);
+        const isUrgent = days >= 7;
 
-            const div = document.createElement('div');
-            div.className = 'job-card';
-            div.innerHTML = `
-        <button class="delete-btn" data-index="${jobs.indexOf(job)}" title="Remove">❌</button>
+        const div = document.createElement('div');
+        div.className = 'job-card';
+        div.innerHTML = `
+        <button class="delete-btn" data-id="${job.id}" title="Remove">❌</button>
         <div class="role">${escapeHtml(job.role)}</div>
         <div class="company">${escapeHtml(job.company)}</div>
         <div class="meta">
@@ -64,55 +98,90 @@ function loadJobs() {
         </div>
       `;
 
-            // Add click to open job URL
-            div.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('delete-btn')) {
-                    chrome.tabs.create({ url: job.url });
-                }
-            });
-            div.style.cursor = 'pointer';
-
-            jobsDiv.appendChild(div);
+        // Add click to open job URL
+        div.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-btn')) {
+                chrome.tabs.create({ url: job.url });
+            }
         });
+        div.style.cursor = 'pointer';
 
-        // Add delete handlers
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const index = parseInt(btn.dataset.index);
-                deleteJob(index);
-            });
+        jobsDiv.appendChild(div);
+    });
+
+    // Add delete handlers
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            deleteJob(id);
         });
     });
 }
 
 // Escape HTML to prevent XSS
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    if (typeof text !== 'string') {
+        return '';
+    }
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+        '/': '&#x2F;'
+    };
+    return text.replace(/[&<>"'\/]/g, m => map[m]);
 }
 
 // Delete a job
-function deleteJob(index) {
+function deleteJob(id) {
     chrome.storage.local.get(['jobs'], (data) => {
+        if (chrome.runtime.lastError) {
+            console.error('Error getting jobs:', chrome.runtime.lastError);
+            showStatus('Error accessing storage', 'error');
+            return;
+        }
+        
         const jobs = data.jobs || [];
-        jobs.splice(index, 1);
-        chrome.storage.local.set({ jobs }, loadJobs);
+        const updatedJobs = jobs.filter(job => job.id !== id);
+        
+        chrome.storage.local.set({ jobs: updatedJobs }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('Error saving jobs:', chrome.runtime.lastError);
+                showStatus('Error saving changes', 'error');
+            } else {
+                loadJobs(); // Reload the UI after successful deletion
+            }
+        });
     });
 }
 
 // Clear all jobs
 document.getElementById('clear-btn').addEventListener('click', () => {
     if (confirm('Are you sure you want to clear all tracked applications?')) {
-        chrome.storage.local.set({ jobs: [] }, loadJobs);
-        showStatus('All applications cleared', 'success');
+        chrome.storage.local.set({ jobs: [] }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('Error clearing jobs:', chrome.runtime.lastError);
+                showStatus('Error clearing applications', 'error');
+            } else {
+                loadJobs();
+                showStatus('All applications cleared', 'success');
+            }
+        });
     }
 });
 
 // Generate follow-up email (using local template for MVP)
 document.getElementById('draft-btn').addEventListener('click', () => {
     chrome.storage.local.get(['jobs'], (data) => {
+        if (chrome.runtime.lastError) {
+            console.error('Error getting jobs:', chrome.runtime.lastError);
+            showStatus('Error accessing applications', 'error');
+            return;
+        }
+        
         const jobs = data.jobs || [];
         if (jobs.length === 0) {
             showStatus('No jobs to follow up on!', 'error');
