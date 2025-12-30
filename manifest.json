@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "JobTrack – Follow-Up Assistant",
+  "version": "1.0",
+  "description": "Track job applications and generate AI follow-ups.",
+  "permissions": ["storage", "activeTab"],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.indeed.com/*",
+        "https://*.workday.com/*"
+      ],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon-32.png"
+  },
+  "icons": {
+    "32": "icon-32.png"
+  }
+}
