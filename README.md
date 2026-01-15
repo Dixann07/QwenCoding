@@ -1,39 +1,135 @@
-```markdown
-![Invoice document showing details of computer sales including invoice number, date, seller and client information, itemized list of computers with quantities and prices, and summary totals]
+# Test Cases – Selenium + Jenkins Automated Testing Mini Project
 
-# Invoice no: 51109338
-Date of issue: 04/13/2013
+## Project Name
+Automated Web Application Testing using Selenium and Jenkins
 
-## Seller:
-Andrews, Kirby and Valdez
-58861 Gonzalez Prairie
-Lake Daniellefurt, IN 57228
-Tax Id: 945-82-2137
-IBAN: GB75MCRL06841367619257
+## Application Under Test
+Demo Web Application (Login-based system)
 
-## Client:
-Becker Ltd
-8012 Stewart Summit Apt. 455
-North Douglas, AZ 95355
-Tax Id: 942-80-0517
+## Test Environment
+- Browser: Google Chrome (Headless)
+- Automation Tool: Selenium WebDriver
+- Language: Java / Python
+- CI Tool: Jenkins
+- OS: Windows / Linux
+- Build Tool: Maven / pip
 
-## ITEMS
-
-| No. | Description | Qty | UM | Net price | Net worth | VAT [%] | Gross worth |
-|-----|-------------|-----|----|-----------|-----------|---------|-------------|
-| 1. | CLEARANCE! Fast Dell Desktop Computer PC DUAL CORE WINDOWS 10 4/8/16GB RAM | 3,00 | each | 209,00 | 627,00 | 10% | 689,70 |
-| 2. | HP T520 Thin Client Computer AMD GX-212JC 1.2GHz 4GB RAM TESTED !!READ BELOW!! | 5,00 | each | 37,75 | 188,75 | 10% | 207,63 |
-| 3. | gaming pc desktop computer | 1,00 | each | 400,00 | 400,00 | 10% | 440,00 |
-| 4. | 12-Core Gaming Computer Desktop PC Tower Affordable GAMING PC 8GB AMD Vega RGB | 3,00 | each | 464,89 | 1 394,67 | 10% | 1 534,14 |
-| 5. | Custom Build Dell Optiplex 9020 MT i5-4570 3.20GHz Desktop Computer PC | 5,00 | each | 221,99 | 1 109,95 | 10% | 1 220,95 |
-| 6. | Dell Optiplex 990 MT Computer PC Quad Core i7 3.4GHz 16GB 2TB HD Windows 10 Pro | 4,00 | each | 269,95 | 1 079,80 | 10% | 1 187,78 |
-| 7. | Dell Core 2 Duo Desktop Computer | Windows XP Pro | 4GB | 500GB | 5,00 | each | 168,00 | 840,00 | 10% | 924,00 |
-
-## SUMMARY
-
-| | VAT [%] | Net worth | VAT | Gross worth |
-|-----|---------|-----------|-----|-------------|
-|  | 10% | 5 640,17 | 564,02 | 6 204,19 |
-| **Total** | | **$ 5 640,17** | **$ 564,02** | **$ 6 204,19** |
-```
 ---
+
+## Test Case 01: Verify Login with Valid Credentials
+
+**Test Case ID:** TC_LOGIN_001  
+**Test Scenario:** User logs in with valid credentials  
+**Precondition:** User is registered  
+**Steps:**
+1. Open the application URL  
+2. Enter valid username  
+3. Enter valid password  
+4. Click Login button  
+
+**Expected Result:**  
+User should be redirected to the dashboard page  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Test Case 02: Verify Login with Invalid Credentials
+
+**Test Case ID:** TC_LOGIN_002  
+**Test Scenario:** User logs in with invalid credentials  
+**Precondition:** User is not authenticated  
+**Steps:**
+1. Open the application URL  
+2. Enter invalid username  
+3. Enter invalid password  
+4. Click Login button  
+
+**Expected Result:**  
+Error message should be displayed  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Test Case 03: Verify Empty Login Fields
+
+**Test Case ID:** TC_LOGIN_003  
+**Test Scenario:** User submits login form without credentials  
+**Precondition:** Login page is loaded  
+**Steps:**
+1. Open the application URL  
+2. Leave username field empty  
+3. Leave password field empty  
+4. Click Login button  
+
+**Expected Result:**  
+Validation message should be shown  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Test Case 04: Verify Dashboard Page Load
+
+**Test Case ID:** TC_DASHBOARD_001  
+**Test Scenario:** Dashboard page loads correctly after login  
+**Precondition:** User is logged in  
+**Steps:**
+1. Login with valid credentials  
+2. Observe page title and key elements  
+
+**Expected Result:**  
+Dashboard page should load with correct title  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Test Case 05: Verify Logout Functionality
+
+**Test Case ID:** TC_LOGOUT_001  
+**Test Scenario:** User logs out from the application  
+**Precondition:** User is logged in  
+**Steps:**
+1. Click Logout button  
+2. Observe navigation  
+
+**Expected Result:**  
+User should be redirected to login page  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Test Case 06: Verify Unauthorized Access (Negative Test)
+
+**Test Case ID:** TC_SECURITY_001  
+**Test Scenario:** Access dashboard without login  
+**Precondition:** User is logged out  
+**Steps:**
+1. Directly access dashboard URL  
+
+**Expected Result:**  
+User should be redirected to login page  
+
+**Actual Result:** As expected  
+**Status:** Pass  
+
+---
+
+## Automation Notes
+- All test cases are automated using Selenium WebDriver  
+- Jenkins executes tests automatically on each build  
+- HTML report is generated after execution  
+- Screenshots are captured on test failure  
+
+---
+
+## Conclusion
+This test suite validates core functionalities of the web application and demonstrates continuous automated testing using Selenium and Jenkins.
